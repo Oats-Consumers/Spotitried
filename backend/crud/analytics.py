@@ -16,16 +16,11 @@ def get_most_played_songs(db: Session):
         .all()
     )
 
-def get_user_playtime(db: Session):
-    first_day_last_month = (datetime.utcnow().replace(day=1) - timedelta(days=1)).replace(day=1)
-    first_day_this_month = datetime.utcnow().replace(day=1)
-
+def get_user_playtime(db: Session, user_id: int):
     return (
-        db.query(Playback.user_id, func.sum(Playback.duration_played).label("total_playtime"))
-        .filter(Playback.played_at >= first_day_last_month)
-        .filter(Playback.played_at < first_day_this_month)
-        .group_by(Playback.user_id)
-        .all()
+        db.query(func.sum(Playback.duration_played).label("total_playtime"))
+        .filter(Playback.user_id == user_id)
+        .scalar()
     )
 
 def get_top_playlists(db: Session):
