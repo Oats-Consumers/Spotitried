@@ -8,6 +8,7 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 import vuetify from 'vite-plugin-vuetify'
 
 export default defineConfig({
+  base: '/Spotitried/',
   plugins: [
     vue(),
     vueDevTools(),
