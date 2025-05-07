@@ -1,5 +1,5 @@
 TRUNCATE TABLE
-    "User",
+    Listener,
     Song,
     Playlist,
     PlaylistSong,
