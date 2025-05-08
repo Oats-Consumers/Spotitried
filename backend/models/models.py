@@ -14,7 +14,7 @@ class Listener(Base):
 
     playlists = relationship("Playlist", back_populates="listener")
     playbacks = relationship("Playback", back_populates="listener")
-    follows = relationship("Follow", back_populates="listener")
+    follows = relationship("Follow", back_populates="listener", cascade="all, delete-orphan")
 
 
 class Playlist(Base):
@@ -27,8 +27,8 @@ class Playlist(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     listener = relationship("Listener", back_populates="playlists")
-    songs = relationship("PlaylistSong", back_populates="playlist")
-    followers = relationship("Follow", back_populates="playlist")
+    songs = relationship("PlaylistSong", back_populates="playlist", cascade="all, delete-orphan")
+    followers = relationship("Follow", back_populates="playlist", cascade="all, delete-orphan")
 
 
 class Song(Base):
@@ -73,9 +73,8 @@ class PlaylistSong(Base):
 class Follow(Base):
     __tablename__ = "follow"
 
-    listener_id = Column(Integer, ForeignKey("listener.id"), primary_key=True)
-    playlist_id = Column(Integer, ForeignKey("playlist.id"), primary_key=True)
-    followed_at = Column(DateTime, default=datetime.utcnow)
+    listener_id = Column(Integer, ForeignKey("listener.id", ondelete="CASCADE"), primary_key=True)
+    playlist_id = Column(Integer, ForeignKey("playlist.id", ondelete="CASCADE"), primary_key=True)
 
     listener = relationship("Listener", back_populates="follows")
     playlist = relationship("Playlist", back_populates="followers")
