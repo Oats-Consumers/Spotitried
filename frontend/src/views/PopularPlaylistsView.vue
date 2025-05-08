@@ -21,7 +21,7 @@
       </template>
     </v-data-table>
 
-    <v-dialog v-model="dialog" max-width="600px">
+    <v-dialog v-model="dialog" max-width="700px">
       <v-card>
         <v-card-title class="mx-auto d-inline-block pb-1 pt-4">
           Songs in {{ selectedPlaylist?.name || '' }}
@@ -29,12 +29,26 @@
         <v-card-text class="py-0">
           <v-list class="py-0">
             <v-list-item
-              class="pt-0"
               v-for="(song, index) in selectedPlaylist?.songs || []"
               :key="index"
-              :title="song.title + ' - ' + song.artist"
-              :subtitle="`Album: ${song.album} | Duration: ${formatDuration(song.duration)}`"
-            />
+            >
+              <template #prepend>
+                <span class="mr-2 text-center" style="width: 20px;">{{ index + 1 }}</span>
+                <v-img 
+                  :src="song.image_url" 
+                  alt="Song Image" 
+                  height="40" 
+                  width="40"
+                  class="rounded-square mr-2"
+                  cover
+                />
+              </template>
+              <v-list-item-title>{{ song.title }} - {{ song.artist }}</v-list-item-title>
+              <v-list-item-subtitle>
+                Album: {{ song.album || 'Unknown' }} | Duration: {{ formatDuration(song.duration) }}
+              </v-list-item-subtitle>
+            </v-list-item>
+
             <v-list-item v-if="songsLoading" class="d-flex justify-center">
               <v-progress-circular
                 indeterminate
@@ -42,6 +56,7 @@
                 class="my-4"
               />
             </v-list-item>
+
             <v-list-item v-else-if="(selectedPlaylist?.songs || []).length === 0" 
               title="No songs available." />
           </v-list>
@@ -63,6 +78,7 @@ interface Song {
   artist: string
   album: string
   duration: number // seconds
+  image_url: string
 }
 
 interface Playlist {
@@ -108,7 +124,8 @@ async function openPlaylist(playlist: Playlist) {
       title: item.title,
       artist: item.artist,
       album: item.album,
-      duration: item.duration
+      duration: item.duration,
+      image_url: item.image_url
     }))
   } catch (error) {
     console.error('Failed to fetch songs:', error)
@@ -128,7 +145,7 @@ async function fetchPlaylists() {
       name: item.name,
       creator: item.created_by,
       followers: item.follower_count,
-      songs: null
+      songs: null // not loaded yet
     }))
   } catch (error) {
     console.error('Failed to fetch playlists:', error)
@@ -141,3 +158,10 @@ onMounted(() => {
   fetchPlaylists()
 })
 </script>
+
+
+<style scoped>
+.rounded-square {
+  border-radius: 8px; /* Slightly rounded corners */
+}
+</style>
