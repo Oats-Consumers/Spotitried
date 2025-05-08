@@ -14,6 +14,8 @@ def get_most_played_songs(db: Session):
             Song.album,
             Song.duration,
             func.sum(Playback.duration_played).label("total_play_time")
+            Song.url,
+            Song.image_url
         )
         .join(Playback, Song.id == Playback.song_id)
         .filter(Playback.played_at >= one_week_ago)
