@@ -21,7 +21,15 @@
       :loading="loading"
       loading-text="Loading users..."
       hover
-    />
+    >
+      <template v-slot:item="{ item }">
+        <tr>
+          <td class="text-center" style="width: 40px;">{{ item.index }}</td>
+          <td>{{ item.username }}</td>
+          <td>{{ item.formattedPlaytime }}</td>
+        </tr>
+      </template>
+    </v-data-table>
   </v-container>
 </template>
 
@@ -37,6 +45,7 @@ const users = ref<UserPlaytime[]>([])
 const loading = ref(true)
 
 const headers = [
+  { title: '#', value: 'index', align: 'center' },
   { title: 'Username', value: 'username' },
   { title: 'Total Playtime', value: 'formattedPlaytime' }
 ]
@@ -61,7 +70,8 @@ async function fetchUserPlaytime() {
     const response = await fetch('https://spotitried.onrender.com/analytics/user-playtime')
     const data = await response.json()
 
-    users.value = data.map((item: any) => ({
+    users.value = data.map((item: any, index: number) => ({
+      index: index + 1,
       username: item.username,
       totalPlaytimeSeconds: item.total_playtime
     }))
@@ -76,3 +86,17 @@ onMounted(() => {
   fetchUserPlaytime()
 })
 </script>
+
+<style scoped>
+::v-deep(th:first-child) {
+  padding-right: 0 !important;
+  text-align: center;
+  width: 40px;
+}
+
+td:first-child {
+  padding-right: 0 !important;
+  text-align: center;
+  width: 40px;
+}
+</style>

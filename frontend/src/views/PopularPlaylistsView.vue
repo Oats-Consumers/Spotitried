@@ -5,7 +5,7 @@
 
     <v-data-table
       :headers="headers"
-      :items="playlists"
+      :items="playlists.map((item, index) => ({ ...item, index: index + 1 }))"
       class="elevation-1"
       :items-per-page="5"
       :loading="loading"
@@ -14,6 +14,7 @@
     >
       <template v-slot:item="{ item }">
         <tr @click="openPlaylist(item)" class="v-data-table__tr cursor-pointer">
+          <td class="text-center" style="width: 40px;">{{ item.index }}</td>
           <td>{{ item.name }}</td>
           <td>{{ item.creator }}</td>
           <td>{{ item.followers }}</td>
@@ -90,6 +91,7 @@ interface Playlist {
 }
 
 const headers = [
+  { title: '#', value: 'index', align: 'center' },
   { title: 'Name', value: 'name' },
   { title: 'Creator', value: 'creator' },
   { title: 'Followers', value: 'followers' }
@@ -163,5 +165,17 @@ onMounted(() => {
 <style scoped>
 .rounded-square {
   border-radius: 8px; /* Slightly rounded corners */
+}
+
+::v-deep(th:first-child) {
+  padding-right: 0 !important;
+  text-align: center;
+  width: 40px;
+}
+
+td:first-child {
+  padding-right: 0 !important;
+  text-align: center;
+  width: 40px;
 }
 </style>
