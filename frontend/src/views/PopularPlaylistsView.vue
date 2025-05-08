@@ -26,8 +26,8 @@
         <v-card-title class="mx-auto d-inline-block pb-1 pt-4">
           Songs in {{ selectedPlaylist?.name || '' }}
         </v-card-title>
-        <v-card-text class="pt-0">
-          <v-list class="pt-0">
+        <v-card-text class="py-0">
+          <v-list class="py-0">
             <v-list-item
               class="pt-0"
               v-for="(song, index) in selectedPlaylist?.songs || []"
@@ -35,10 +35,18 @@
               :title="song.title + ' - ' + song.artist"
               :subtitle="`Album: ${song.album} | Duration: ${formatDuration(song.duration)}`"
             />
-            <v-list-item v-if="(selectedPlaylist?.songs || []).length === 0" title="No songs available." />
+            <v-list-item v-if="songsLoading" class="d-flex justify-center">
+              <v-progress-circular
+                indeterminate
+                color="primary"
+                class="my-4"
+              />
+            </v-list-item>
+            <v-list-item v-else-if="(selectedPlaylist?.songs || []).length === 0" 
+              title="No songs available." />
           </v-list>
         </v-card-text>
-        <v-card-actions>
+        <v-card-actions class="py-0">
           <v-spacer />
           <v-btn text @click="dialog = false">Close</v-btn>
         </v-card-actions>
@@ -58,10 +66,11 @@ interface Song {
 }
 
 interface Playlist {
+  id: number
   name: string
   creator: string
   followers: number
-  songs: Song[]
+  songs: Song[] | null // null means not loaded yet
 }
 
 const headers = [
@@ -75,16 +84,38 @@ const loading = ref(true)
 
 const selectedPlaylist = ref<Playlist | null>(null)
 const dialog = ref(false)
-
-function openPlaylist(playlist: Playlist) {
-  selectedPlaylist.value = playlist
-  dialog.value = true
-}
+const songsLoading = ref(false)
 
 function formatDuration(seconds: number) {
   const mins = Math.floor(seconds / 60)
   const secs = seconds % 60
   return `${mins}:${secs.toString().padStart(2, '0')}`
+}
+
+async function openPlaylist(playlist: Playlist) {
+  selectedPlaylist.value = playlist
+  dialog.value = true
+
+  // If songs already loaded, don't fetch again
+  if (playlist.songs !== null) return
+
+  songsLoading.value = true
+  try {
+    const response = await fetch(`https://spotitried.onrender.com/playlist/get/${playlist.id}/songs`)
+    const data = await response.json()
+
+    playlist.songs = data.map((item: any) => ({
+      title: item.title,
+      artist: item.artist,
+      album: item.album,
+      duration: item.duration
+    }))
+  } catch (error) {
+    console.error('Failed to fetch songs:', error)
+    playlist.songs = [] // prevent retrying every time if failed
+  } finally {
+    songsLoading.value = false
+  }
 }
 
 async function fetchPlaylists() {
@@ -93,10 +124,11 @@ async function fetchPlaylists() {
     const data = await response.json()
 
     playlists.value = data.map((item: any) => ({
+      id: item.id,
       name: item.name,
       creator: item.created_by,
       followers: item.follower_count,
-      songs: [] // API doesn't provide songs, so leave empty
+      songs: null
     }))
   } catch (error) {
     console.error('Failed to fetch playlists:', error)
