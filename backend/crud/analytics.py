@@ -13,7 +13,7 @@ def get_most_played_songs(db: Session):
             Song.artist,
             Song.album,
             Song.duration,
-            func.sum(Playback.duration_played).label("total_play_time")
+            func.sum(Playback.duration_played).label("total_play_time"),
             Song.url,
             Song.image_url
         )
