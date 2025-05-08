@@ -60,3 +60,25 @@ def get_songs_in_playlist(db: Session, playlist_id: int):
         .order_by(PlaylistSong.added_at)
         .all()
     )
+
+def get_playlist_by_name(db: Session, pattern: str):
+    wildcard_pattern = f"%{pattern}%"
+    return db.query(Playlist).filter(Playlist.name.ilike(wildcard_pattern)).all()
+
+def add_song_to_playlist(db: Session, playlist_id: int, song_id: int):
+    link = PlaylistSong(playlist_id=playlist_id, song_id=song_id)
+    db.add(link)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise ValueError("Song already exists in playlist")
+    return link
+
+def remove_song_from_playlist(db: Session, playlist_id: int, song_id: int):
+    link = db.query(PlaylistSong).filter_by(playlist_id=playlist_id, song_id=song_id).first()
+    if not link:
+        raise ValueError("Song not found in playlist")
+    db.delete(link)
+    db.commit()
+    return True

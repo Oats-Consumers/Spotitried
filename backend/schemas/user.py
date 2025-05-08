@@ -20,7 +20,7 @@ class PlaylistResponse(BaseModel):
     name: str
     listener_id: int
     created_at: datetime
-
+    is_user_created: bool
     class Config:
         from_attributes = True
 
