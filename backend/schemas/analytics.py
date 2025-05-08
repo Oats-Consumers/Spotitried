@@ -8,6 +8,8 @@ class SongStat(BaseModel):
     album: Optional[str] = None
     duration: int
     total_play_time: float
+    url: Optional[str] = None
+    image_url: Optional[str] = None
     class Config:
         from_attributes = True
 
