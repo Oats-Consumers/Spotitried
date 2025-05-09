@@ -26,6 +26,8 @@
         <router-view />
       </v-container>
     </v-main>
+
+    <MusicPlayer></MusicPlayer>
   </v-app>
 </template>
 
@@ -33,6 +35,7 @@
 import { ref, watch } from 'vue'
 import { useTheme } from 'vuetify'
 import SpotitriedLogo from '@/assets/cropped_spotitried_logo.png'
+import MusicPlayer from './components/MusicPlayer.vue';
 
 const drawer = ref(true)
 

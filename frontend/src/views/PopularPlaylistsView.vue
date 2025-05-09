@@ -32,9 +32,25 @@
             <v-list-item
               v-for="(song, index) in selectedPlaylist?.songs || []"
               :key="index"
+              class="song-row"
+              @mouseenter="hoveredIndex = index"
+              @mouseleave="hoveredIndex = null"
             >
               <template #prepend>
-                <span class="mr-2 text-center" style="width: 20px;">{{ index + 1 }}</span>
+                <v-icon
+                  v-if="hoveredIndex === index"
+                  size="20"
+                  @click.stop="playSong(index)"
+                  class="fade-in mr-2"
+                >
+                  mdi-play
+                </v-icon>
+                <span 
+                  v-else 
+                  class="mr-2 text-center fade-out" 
+                  style="width: 20px;"
+                >{{ index + 1 }}</span>
+
                 <v-img 
                   :src="song.image_url" 
                   alt="Song Image" 
@@ -73,12 +89,15 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useMusicPlayerStore } from '@/stores/musicPlayer'
 
 interface Song {
+  id: number
   title: string
   artist: string
-  album: string
-  duration: number // seconds
+  album: string | null
+  duration: number
+  url: string
   image_url: string
 }
 
@@ -87,7 +106,7 @@ interface Playlist {
   name: string
   creator: string
   followers: number
-  songs: Song[] | null // null means not loaded yet
+  songs: Song[] | null
 }
 
 const headers = [
@@ -104,6 +123,8 @@ const selectedPlaylist = ref<Playlist | null>(null)
 const dialog = ref(false)
 const songsLoading = ref(false)
 
+const hoveredIndex = ref<number | null>(null)
+
 function formatDuration(seconds: number) {
   const mins = Math.floor(seconds / 60)
   const secs = seconds % 60
@@ -114,7 +135,6 @@ async function openPlaylist(playlist: Playlist) {
   selectedPlaylist.value = playlist
   dialog.value = true
 
-  // If songs already loaded, don't fetch again
   if (playlist.songs !== null) return
 
   songsLoading.value = true
@@ -123,18 +143,26 @@ async function openPlaylist(playlist: Playlist) {
     const data = await response.json()
 
     playlist.songs = data.map((item: any) => ({
+      id: item.id,
       title: item.title,
       artist: item.artist,
       album: item.album,
       duration: item.duration,
+      url: item.url,
       image_url: item.image_url
     }))
   } catch (error) {
     console.error('Failed to fetch songs:', error)
-    playlist.songs = [] // prevent retrying every time if failed
+    playlist.songs = []
   } finally {
     songsLoading.value = false
   }
+}
+
+function playSong(index: number) {
+  if (!selectedPlaylist.value) return
+  const player = useMusicPlayerStore()
+  player.loadPlaylist(selectedPlaylist.value.songs!, index)
 }
 
 async function fetchPlaylists() {
@@ -147,7 +175,7 @@ async function fetchPlaylists() {
       name: item.name,
       creator: item.created_by,
       followers: item.follower_count,
-      songs: null // not loaded yet
+      songs: null
     }))
   } catch (error) {
     console.error('Failed to fetch playlists:', error)
@@ -161,10 +189,18 @@ onMounted(() => {
 })
 </script>
 
-
 <style scoped>
 .rounded-square {
-  border-radius: 8px; /* Slightly rounded corners */
+  border-radius: 8px;
+}
+
+.song-row {
+  transition: background-color 0.2s;
+}
+
+.song-row:hover {
+  background-color: #f5f5f5;
+  cursor: pointer;
 }
 
 ::v-deep(th:first-child) {
@@ -177,5 +213,19 @@ td:first-child {
   padding-right: 0 !important;
   text-align: center;
   width: 40px;
+}
+
+.fade-in {
+  opacity: 1;
+  transition: opacity 0.2s;
+}
+
+.fade-out {
+  opacity: 1;
+  transition: opacity 0.2s;
+}
+
+.song-row:hover .fade-out {
+  opacity: 0;
 }
 </style>
