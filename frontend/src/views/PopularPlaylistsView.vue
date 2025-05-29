@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <v-container class="my-5">
     <h1>Popular Playlists</h1>
     <p class="mb-2">This page will list the most followed user-created playlists.</p>
 

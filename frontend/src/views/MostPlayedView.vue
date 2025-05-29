@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <v-container class="my-5">
     <h1>Most Played Songs</h1>
     <p class="mb-2">This page will display the most played songs in the past week.</p>
 

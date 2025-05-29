@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <v-container class="my-5">
     <h1>User Playtime</h1>
     <p class="mb-2">This page will show total playtime for each user last month.</p>
 

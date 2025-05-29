@@ -6,8 +6,17 @@
           <v-img :src="SpotitriedLogo" alt="Spotitried Logo" cover></v-img>
         </v-avatar>
       </v-btn>
-      <!-- <v-app-bar-title class="ml-0 text-no-wrap">Spotitried</v-app-bar-title> -->
       <v-spacer></v-spacer>
+      
+      <!-- Auth buttons -->
+      <template v-if="!auth.loggedIn">
+        <v-btn variant="text" to="/login" router>Login</v-btn>
+        <v-btn variant="text" to="/register" router>Register</v-btn>
+      </template>
+      <template v-else>
+        <v-btn variant="text" @click="auth.logout">Logout</v-btn>
+      </template>
+      <!-- Dark mode toggle -->
       <v-btn icon @click="isDark = !isDark">
         <v-icon>{{ isDark ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
       </v-btn>
@@ -22,9 +31,7 @@
     </v-navigation-drawer>
 
     <v-main>
-      <v-container>
-        <router-view />
-      </v-container>
+      <router-view />
     </v-main>
 
     <MusicPlayer></MusicPlayer>
@@ -36,10 +43,13 @@ import { ref, watch } from 'vue'
 import { useTheme } from 'vuetify'
 import SpotitriedLogo from '@/assets/cropped_spotitried_logo.png'
 import MusicPlayer from './components/MusicPlayer.vue';
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
 
 const drawer = ref(true)
 
-const isDark = ref(false)
+const isDark = ref(true)
 
 const theme = useTheme()
 
