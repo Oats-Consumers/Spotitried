@@ -17,17 +17,17 @@ def login_listener(credentials: ListenerLogin, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     return {"message": "Login successful", "listener_id": db_listener.id}
 
-@router.get("/follow/{listener_id}/{playlist_id}")
+@router.post("/follow/{listener_id}/{playlist_id}")
 def follow_playlist(listener_id: int, playlist_id: int, db: Session = Depends(get_db)):
     return user.follow_playlist(db, listener_id, playlist_id)
 
-@router.get("/unfollow/{listener_id}/{playlist_id}")
+@router.delete("/unfollow/{listener_id}/{playlist_id}")
 def unfollow_playlist(listener_id: int, playlist_id: int, db: Session = Depends(get_db)):
     return user.unfollow_playlist(db, listener_id, playlist_id)
 
-@router.get("/user-info-by-mail/{mail}")
-def user_info_by_mail(mail: str, db: Session = Depends(get_db)):
-    db_listener = user.user_info_by_mail(db, mail)
+@router.get("/user-info-by-email/{email}")
+def user_info_by_email(email: str, db: Session = Depends(get_db)):
+    db_listener = user.user_info_by_email(db, email)
     if not db_listener:
         raise HTTPException(status_code=404, detail="User not found")
     return db_listener
