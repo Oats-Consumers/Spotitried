@@ -90,6 +90,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useMusicPlayerStore } from '@/stores/musicPlayer'
+import type { DataTableHeader } from 'vuetify'
 
 interface Song {
   id: number
@@ -109,7 +110,7 @@ interface Playlist {
   songs: Song[] | null
 }
 
-const headers = [
+const headers: DataTableHeader[] = [
   { title: '#', value: 'index', align: 'center' },
   { title: 'Name', value: 'name' },
   { title: 'Creator', value: 'creator' },

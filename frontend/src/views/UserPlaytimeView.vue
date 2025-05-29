@@ -12,19 +12,17 @@
 
     <v-data-table
       :headers="headers"
-      :items="filteredUsers.map(user => ({
-        ...user,
-        formattedPlaytime: formatDuration(user.totalPlaytimeSeconds)
-      }))"
+      :items="filteredUsersWithDuration"
       class="elevation-1"
-      :items-per-page="5"
+      v-model:page="page"
+      v-model:items-per-page="itemsPerPage"
       :loading="loading"
       loading-text="Loading users..."
       hover
     >
       <template v-slot:item="{ item }">
         <tr>
-          <td class="text-center" style="width: 40px;">{{ item.index }}</td>
+          <td class="text-center" style="width: 40px;">{{ item.rank }}</td>
           <td>{{ item.username }}</td>
           <td>{{ item.formattedPlaytime }}</td>
         </tr>
@@ -35,22 +33,25 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import type { DataTableHeader } from 'vuetify'
 
 interface UserPlaytime {
   username: string
   totalPlaytimeSeconds: number
+  rank: number
 }
 
 const users = ref<UserPlaytime[]>([])
 const loading = ref(true)
+const search = ref('')
+const page = ref(1)
+const itemsPerPage = ref(5)
 
-const headers = [
-  { title: '#', value: 'index', align: 'center' },
+const headers: DataTableHeader[] = [
+  { title: '#', value: 'rank', align: 'center' },
   { title: 'Username', value: 'username' },
   { title: 'Total Playtime', value: 'formattedPlaytime' }
 ]
-
-const search = ref('')
 
 function formatDuration(seconds: number) {
   const hours = Math.floor(seconds / 3600)
@@ -60,21 +61,30 @@ function formatDuration(seconds: number) {
 
 const filteredUsers = computed(() => {
   if (!search.value) return users.value
-  return users.value.filter(user => 
+  return users.value.filter(user =>
     user.username.toLowerCase().includes(search.value.toLowerCase())
   )
 })
+
+const filteredUsersWithDuration = computed(() =>
+  filteredUsers.value.map(user => ({
+    ...user,
+    formattedPlaytime: formatDuration(user.totalPlaytimeSeconds)
+  }))
+)
 
 async function fetchUserPlaytime() {
   try {
     const response = await fetch('https://spotitried.onrender.com/analytics/user-playtime')
     const data = await response.json()
 
-    users.value = data.map((item: any, index: number) => ({
-      index: index + 1,
-      username: item.username,
-      totalPlaytimeSeconds: item.total_playtime
-    }))
+    users.value = data
+      .sort((a: any, b: any) => b.total_playtime - a.total_playtime)
+      .map((item: any, index: number) => ({
+        username: item.username,
+        totalPlaytimeSeconds: item.total_playtime,
+        rank: index + 1
+      }))
   } catch (error) {
     console.error('Failed to fetch user playtime:', error)
   } finally {

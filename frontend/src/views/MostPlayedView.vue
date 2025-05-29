@@ -39,6 +39,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import type { DataTableHeader } from 'vuetify'
 
 interface Song {
   title: string
@@ -52,7 +53,7 @@ interface Song {
 const songs = ref<Song[]>([])
 const loading = ref(true)
 
-const headers = [
+const headers: DataTableHeader[] = [
   { title: '#', value: 'index', align: 'center' },
   { title: 'Title', value: 'title' },
   { title: 'Artist', value: 'artist' },
