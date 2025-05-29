@@ -17,3 +17,7 @@ def get_user_playtime(db: Session = Depends(get_db)):
 @router.get("/top-playlists", response_model=list[PlaylistStat])
 def get_top_playlists(db: Session = Depends(get_db)):
     return analytics.get_top_playlists(db)
+
+@router.get("/listener-playlist-follows/{listener_id}", response_model=list[PlaylistStat])
+def get_listener_playlist_follows(listener_id: int, db: Session = Depends(get_db)):
+    return analytics.get_listener_playlist_follows(db, listener_id)
