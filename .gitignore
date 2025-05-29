@@ -1,3 +1,5 @@
 .idea
 spotitried.session.sql
 .env
+*.cpython*
+*.pyc*

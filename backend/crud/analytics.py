@@ -5,7 +5,7 @@ from backend.models.models import Song, Playback, Playlist, Follow, Listener
 
 
 def get_most_played_songs(db: Session):
-    one_week_ago = datetime.utcnow() - timedelta(days=7)
+    one_week_ago = datetime.utcnow() - timedelta(days=40)
     return (
         db.query(
             Song.id,
