@@ -30,5 +30,5 @@ def unfollow_playlist(db: Session, listener_id: int, playlist_id: int):
     db.commit()
     return {"message": "Unfollowed successfully"}
 
-def user_info_by_mail(db: Session, email: str):
+def user_info_by_email(db: Session, email: str):
     return db.query(Listener).filter(Listener.email == email).first()
