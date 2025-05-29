@@ -55,16 +55,26 @@ def get_top_playlists(db: Session):
     )
 
 def get_listener_playlist_follows(db: Session, listener_id: int):
-    return (
+    playlists = (
         db.query(
             Playlist.id,
             Playlist.name,
-            func.count(Follow.listener_id).label("follower_count"),
             Listener.username.label("created_by")
         )
-        .join(Follow, Playlist.id == Follow.playlist_id)
         .join(Listener, Playlist.listener_id == Listener.id)
-        .filter(Follow.listener_id == listener_id)
+        .filter(Follow.listener_id == listener_id, Follow.playlist_id == Playlist.id)
         .group_by(Playlist.id, Listener.username)
         .all()
     )
+
+    return [
+        {
+            "id": playlist.id,
+            "name": playlist.name,
+            "created_by": playlist.created_by,
+            "follower_count": db.query(func.count(Follow.listener_id))
+            .filter(Follow.playlist_id == playlist.id)
+            .scalar()
+        }
+        for playlist in playlists
+    ]
