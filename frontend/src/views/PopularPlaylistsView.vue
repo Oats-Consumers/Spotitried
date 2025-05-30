@@ -5,7 +5,7 @@
 
     <v-data-table
       :headers="headers"
-      :items="playlists.map((item, index) => ({ ...item, index: index + 1 }))"
+      :items="displayedPlaylists"
       class="elevation-1"
       :items-per-page="5"
       :loading="loading"
@@ -17,7 +17,16 @@
           <td class="text-center" style="width: 40px;">{{ item.index }}</td>
           <td>{{ item.name }}</td>
           <td>{{ item.creator }}</td>
-          <td>{{ item.followers }}</td>
+          <td class="d-flex align-center justify-space-between">
+            <span>{{ item.followers }}</span>
+            <v-icon
+              v-if="auth.username !== item.creator"
+              :icon="isFollowing(item.id) ? 'mdi-heart' : 'mdi-heart-outline'"
+              :color="isFollowing(item.id) ? 'red' : ''"
+              class="ml-2"
+              @click.stop="toggleFollow(item)"
+            />
+          </td>
         </tr>
       </template>
     </v-data-table>
@@ -100,6 +109,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useMusicPlayerStore } from '@/stores/musicPlayer'
+import { useAuthStore } from '@/stores/auth'
 import type { DataTableHeader } from 'vuetify'
 import { useTheme } from 'vuetify'
 
@@ -121,6 +131,11 @@ interface Playlist {
   songs: Song[] | null
 }
 
+const auth = useAuthStore()
+const playlists = ref<Playlist[]>([])
+const followedPlaylistIds = ref<number[]>([])
+const loading = ref(true)
+
 const headers: DataTableHeader[] = [
   { title: '#', value: 'index', align: 'center' },
   { title: 'Name', value: 'name' },
@@ -128,13 +143,9 @@ const headers: DataTableHeader[] = [
   { title: 'Followers', value: 'followers' }
 ]
 
-const playlists = ref<Playlist[]>([])
-const loading = ref(true)
-
 const selectedPlaylist = ref<Playlist | null>(null)
 const dialog = ref(false)
 const songsLoading = ref(false)
-
 const hoveredIndex = ref<number | null>(null)
 
 const player = useMusicPlayerStore()
@@ -145,11 +156,79 @@ const songRowClass = computed(() =>
   theme.global.name.value === 'dark' ? 'song-row-dark' : 'song-row-light'
 )
 
+const displayedPlaylists = computed(() =>
+  playlists.value
+    .sort((a, b) => b.followers - a.followers)
+    .map((p, i) => ({ ...p, index: i + 1 }))
+)
+
 function formatDuration(seconds: number) {
   const mins = Math.floor(seconds / 60)
   const secs = seconds % 60
   return `${mins}:${secs.toString().padStart(2, '0')}`
 }
+
+async function fetchPlaylists() {
+  try {
+    const response = await fetch('https://spotitried.onrender.com/analytics/top-playlists')
+    const data = await response.json()
+    playlists.value = data.map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      creator: item.created_by,
+      followers: item.follower_count,
+      songs: null
+    }))
+  } catch (error) {
+    console.error('Failed to fetch playlists:', error)
+  }
+}
+
+async function fetchFollowedPlaylists() {
+  if (!auth.loggedIn || !auth.id) return
+  try {
+    const res = await fetch(`https://spotitried.onrender.com/analytics/listener-playlist-follows/${auth.id}`)
+    const data = await res.json()
+    followedPlaylistIds.value = data.map((p: any) => p.id)
+  } catch (err) {
+    console.error('Failed to fetch followed playlists:', err)
+  }
+}
+
+function isFollowing(id: number) {
+  return followedPlaylistIds.value.includes(id)
+}
+
+async function toggleFollow(playlist: Playlist) {
+  if (!auth.loggedIn || !auth.id) return
+
+  const isFollowed = isFollowing(playlist.id)
+  const url = `https://spotitried.onrender.com/user/${isFollowed ? 'unfollow' : 'follow'}/${auth.id}/${playlist.id}`
+
+  try {
+    const res = await fetch(url, { method: isFollowed ? 'DELETE' : 'POST' })
+    if (!res.ok) throw new Error(await res.text())
+
+    // Remove and re-insert updated playlist to trigger reactivity
+    playlists.value = playlists.value.filter(p => p.id !== playlist.id)
+
+    const updatedPlaylist: Playlist = {
+      ...playlist,
+      followers: playlist.followers + (isFollowed ? -1 : 1),
+    }
+
+    playlists.value.push(updatedPlaylist)
+
+    if (isFollowed) {
+      followedPlaylistIds.value = followedPlaylistIds.value.filter(id => id !== playlist.id)
+    } else {
+      followedPlaylistIds.value.push(playlist.id)
+    }
+  } catch (err) {
+    console.error('Failed to toggle follow:', err)
+  }
+}
+
 
 async function openPlaylist(playlist: Playlist) {
   selectedPlaylist.value = playlist
@@ -184,27 +263,9 @@ function playSong(index: number) {
   player.loadPlaylist(selectedPlaylist.value.songs!, index)
 }
 
-async function fetchPlaylists() {
-  try {
-    const response = await fetch('https://spotitried.onrender.com/analytics/top-playlists')
-    const data = await response.json()
-
-    playlists.value = data.map((item: any) => ({
-      id: item.id,
-      name: item.name,
-      creator: item.created_by,
-      followers: item.follower_count,
-      songs: null
-    }))
-  } catch (error) {
-    console.error('Failed to fetch playlists:', error)
-  } finally {
-    loading.value = false
-  }
-}
-
-onMounted(() => {
-  fetchPlaylists()
+onMounted(async () => {
+  await Promise.all([fetchPlaylists(), fetchFollowedPlaylists()])
+  loading.value = false
 })
 </script>
 
@@ -244,7 +305,7 @@ onMounted(() => {
   position: relative;
   width: 20px;
   height: 20px;
-  display: flex; /* <-- changed from inline-block */
+  display: flex;
   align-items: center;
   justify-content: center;
 }
@@ -261,5 +322,4 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
 }
-
 </style>
