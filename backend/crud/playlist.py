@@ -3,6 +3,18 @@ from backend.models.models import Song, Playlist, Listener, PlaylistSong
 from datetime import datetime
 from sqlalchemy.exc import IntegrityError
 
+def get_playlist_by_id(db: Session, playlist_id: int):
+    playlist = db.query(
+        Playlist.id,
+        Playlist.name,
+        Playlist.is_user_created,
+        Playlist.listener_id,
+        Playlist.created_at
+    ).filter(Playlist.id == playlist_id).first()
+    if not playlist:
+        raise ValueError("Playlist not found")
+    return playlist
+
 def add_song_to_playlist(db: Session, playlist_id: int, song_id: int):
     playlist_song = PlaylistSong(
         playlist_id=playlist_id,
