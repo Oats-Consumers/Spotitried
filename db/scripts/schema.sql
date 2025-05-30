@@ -20,29 +20,28 @@ CREATE TABLE Playlist (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     is_user_created BOOLEAN DEFAULT TRUE,
-    listener_id INT REFERENCES Listener(id),
+    listener_id INT REFERENCES Listener(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE PlaylistSong (
-    playlist_id INT REFERENCES Playlist(id),
-    song_id INT REFERENCES Song(id),
+    playlist_id INT REFERENCES Playlist(id) ON DELETE CASCADE,
+    song_id INT REFERENCES Song(id) ON DELETE CASCADE,
     added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (playlist_id, song_id)
 );
 
 CREATE TABLE Playback (
     id SERIAL PRIMARY KEY,
-    listener_id INT REFERENCES Listener(id),
+    listener_id INT REFERENCES Listener(id) ON DELETE CASCADE,
     song_id INT REFERENCES Song(id),
     played_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     duration_played INT NOT NULL
 );
 
 CREATE TABLE Follow (
-    listener_id INT REFERENCES Listener(id),
-    playlist_id INT REFERENCES Playlist(id),
+    listener_id INT REFERENCES Listener(id) ON DELETE CASCADE,
+    playlist_id INT REFERENCES Playlist(id) ON DELETE CASCADE,
     followed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (listener_id, playlist_id)
 );
-

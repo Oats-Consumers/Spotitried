@@ -6,7 +6,6 @@ import re
 from secrets import SUPABASE_KEY, SUPABASE_URL
 
 # CONFIGURE HERE
-SUPABASE_KEY = SUPABASE_KEY
 SONG_BUCKET = "songs"
 IMAGE_BUCKET = "images"
 SONGS_DIR = "list_of_songs"
