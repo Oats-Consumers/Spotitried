@@ -1,9 +1,51 @@
 <template>
   <v-container class="my-5">
-    <h1>{{ playlist?.name }}</h1>
-    <div v-if="!loading" class="text-subtitle-1 mb-4">
-      Created by {{ playlist?.creator }} · {{ playlist?.followers }} followers
-    </div>
+    <v-row class="align-center justify-space-between mb-4">
+      <v-col>
+        <h1>{{ playlist?.name }}</h1>
+        <div v-if="!loading" class="text-subtitle-1">
+          Created by {{ playlist?.creator }} · {{ playlist?.followers }} followers
+        </div>
+      </v-col>
+      <v-col v-if="isOwner" cols="auto">
+        <v-btn
+          color="red"
+          variant="flat"
+          prepend-icon="mdi-delete"
+          @click="deletePlaylist"
+        >
+          Delete Playlist
+        </v-btn>
+      </v-col>
+    </v-row>
+    
+    <v-dialog v-model="showDeleteDialog" max-width="400">
+      <v-card>
+        <v-card-title class="text-h6">Confirm Deletion</v-card-title>
+        <v-card-text>
+          Are you sure you want to delete this playlist? This action cannot be undone.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn text @click="showDeleteDialog = false">Cancel</v-btn>
+          <v-btn
+            color="red"
+            text
+            @click="confirmDeletePlaylist"
+            :disabled="confirmingDelete"
+          >
+            <v-progress-circular
+              v-if="confirmingDelete"
+              indeterminate
+              size="20"
+              class="mr-2"
+              color="red"
+            />
+            <span v-else>Delete</span>
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <v-autocomplete
       ref="autocompleteRef"
@@ -36,7 +78,6 @@
               cover
             />
           </template>
-
           <v-list-item-content>
             <v-list-item-subtitle class="text-caption">
               Artist: {{ item.raw.artist }} · Album: {{ item.raw.album || 'Unknown' }}
@@ -76,7 +117,6 @@
               {{ index + 1 }}
             </span>
           </div>
-
           <v-img
             :src="song.image_url"
             alt="Song Image"
@@ -119,7 +159,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useMusicPlayerStore } from '@/stores/musicPlayer'
 import { useAuthStore } from '@/stores/auth'
 import { useTheme } from 'vuetify'
@@ -142,6 +182,7 @@ interface Playlist {
 }
 
 const route = useRoute()
+const router = useRouter()
 const playlist = ref<Playlist | null>(null)
 const songs = ref<Song[]>([])
 const loading = ref(true)
@@ -206,6 +247,8 @@ const selectedSearchSong = ref<Song | null>(null)
 const searching = ref(false)
 const adding = ref(false)
 const autocompleteRef = ref()
+const showDeleteDialog = ref(false)
+const confirmingDelete = ref(false)
 
 async function performSearch(query: string) {
   searchQuery.value = query
@@ -218,8 +261,6 @@ async function performSearch(query: string) {
     searching.value = true
     const res = await fetch(`https://spotitried.onrender.com/basic/search?query=${encodeURIComponent(query)}`)
     const data: Song[] = await res.json()
-
-    // Filter out songs already in the playlist
     const existingIds = new Set(songs.value.map(s => s.id))
     searchResults.value = data.filter(song => !existingIds.has(song.id))
   } catch (err) {
@@ -243,7 +284,6 @@ async function addSongToPlaylist(song: Song | null) {
     }
 
     songs.value.push(song)
-
     selectedSearchSong.value = null
     autocompleteRef.value?.blur()
     setTimeout(() => autocompleteRef.value?.focus(), 0)
@@ -271,6 +311,32 @@ async function removeSongFromPlaylist(songId: number) {
     console.error('Failed to remove song from playlist:', err)
   }
 }
+
+function deletePlaylist() {
+  showDeleteDialog.value = true
+}
+
+async function confirmDeletePlaylist() {
+  if (!playlist.value) return
+  confirmingDelete.value = true
+  try {
+    const res = await fetch(`https://spotitried.onrender.com/playlist/delete/${playlist.value.id}`, {
+      method: 'DELETE'
+    })
+
+    if (!res.ok) {
+      const errMsg = await res.text()
+      throw new Error(errMsg)
+    }
+
+    router.push('/my-playlists')
+  } catch (err) {
+    console.error('Failed to delete playlist:', err)
+  } finally {
+    confirmingDelete.value = false
+  }
+}
+
 </script>
 
 <style scoped>
@@ -308,19 +374,5 @@ async function removeSongFromPlaylist(songId: number) {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.fade-in {
-  opacity: 1;
-  transition: opacity 0.2s;
-}
-
-.fade-out {
-  opacity: 1;
-  transition: opacity 0.2s;
-}
-
-.song-row:hover .fade-out {
-  opacity: 0;
 }
 </style>
