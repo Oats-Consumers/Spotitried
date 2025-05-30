@@ -21,6 +21,8 @@ class PlaylistResponse(BaseModel):
     listener_id: int
     created_at: datetime
     is_user_created: bool
+    followers: Optional[int] = 0  # This is the key line
+    created_by: Optional[str] = None  # This is the key line
     class Config:
         from_attributes = True
 

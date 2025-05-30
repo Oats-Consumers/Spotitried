@@ -9,9 +9,23 @@ router = APIRouter()
 @router.get('/by_id/{playlist_id}', response_model=PlaylistResponse)
 def get_playlist_by_id(playlist_id: int, db: Session = Depends(get_db)):
     playlist = func_playlist.get_playlist_by_id(db, playlist_id)
+    followers_count, created_by = func_playlist.followers_of_playlist(db, playlist_id, playlist.listener_id)
+    followers_count = int(followers_count)  # Ensure followers_count is an integer
+    created_by = str(created_by)  # Ensure created_by is a string
+    print(f"Followers count: {followers_count}, Created by: {created_by}")
+
     if not playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
-    return playlist
+    result = {
+        "id": playlist.id,
+        "name": playlist.name,
+        "is_user_created": playlist.is_user_created,
+        "listener_id": playlist.listener_id,
+        "created_at": playlist.created_at,
+        "followers": followers_count,
+        "created_by": created_by
+    }
+    return result
 
 @router.post("/create", response_model=PlaylistResponse)
 def create_playlist(playlist: PlaylistCreate, db: Session = Depends(get_db)):

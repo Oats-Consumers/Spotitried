@@ -25,7 +25,6 @@ class Playlist(Base):
     is_user_created = Column(Boolean, default=True)
     listener_id = Column(Integer, ForeignKey("listener.id"))
     created_at = Column(DateTime, default=datetime.utcnow)
-
     listener = relationship("Listener", back_populates="playlists")
     songs = relationship("PlaylistSong", back_populates="playlist", cascade="all, delete-orphan")
     followers = relationship("Follow", back_populates="playlist", cascade="all, delete-orphan")

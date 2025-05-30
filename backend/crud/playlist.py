@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Session
-from backend.models.models import Song, Playlist, Listener, PlaylistSong
+from backend.models.models import Song, Playlist, Listener, PlaylistSong, Follow
 from datetime import datetime
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import func
 
 def get_playlist_by_id(db: Session, playlist_id: int):
     playlist = db.query(
@@ -14,6 +15,12 @@ def get_playlist_by_id(db: Session, playlist_id: int):
     if not playlist:
         raise ValueError("Playlist not found")
     return playlist
+
+def followers_of_playlist(db: Session, playlist_id: int, listener_id: int):
+    follower_count = db.query(func.count(Follow.listener_id)).filter(Follow.playlist_id == playlist_id).scalar()
+    created_by = db.query(Listener.username).filter(Listener.id == listener_id).scalar()
+    print(f"first Follower count: {follower_count}, Created by: {created_by}")
+    return follower_count, created_by
 
 def add_song_to_playlist(db: Session, playlist_id: int, song_id: int):
     playlist_song = PlaylistSong(
