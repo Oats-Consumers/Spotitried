@@ -25,7 +25,7 @@
 
     <v-navigation-drawer
       v-model="drawer"
-      :temporary="display.smAndDown._value"
+      :temporary="display.smAndDown.value"
       app
     >
       <v-list-item :to="{ name: 'home' }" title="Home" link />
@@ -67,7 +67,7 @@ onMounted(() => {
   }
 
   // Auto-close drawer on small screens
-  drawer.value = !display.smAndDown._value
+  drawer.value = !display.smAndDown.value
 })
 
 watch(isDark, (val) => {
@@ -76,7 +76,7 @@ watch(isDark, (val) => {
 })
 
 // Adjust drawer behavior when screen size changes
-watch(() => display.smAndDown._value, (isSmall) => {
+watch(() => display.smAndDown.value, (isSmall) => {
   drawer.value = !isSmall
 })
 </script>
