@@ -15,7 +15,7 @@ def login_listener(credentials: ListenerLogin, db: Session = Depends(get_db)):
     db_listener = user.login_listener(db, credentials.email, credentials.password)
     if not db_listener:
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    return {"message": "Login successful", "listener_id": db_listener.id}
+    return {"message": "Login successful", "listener_id": db_listener.id, "username": db_listener.username}
 
 @router.post("/follow/{listener_id}/{playlist_id}")
 def follow_playlist(listener_id: int, playlist_id: int, db: Session = Depends(get_db)):
