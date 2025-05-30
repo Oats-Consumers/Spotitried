@@ -5,11 +5,7 @@
 
     <v-data-table
       :headers="headers"
-      :items="songs.map((song, index) => ({
-        ...song,
-        index: index + 1,
-        formattedDuration: formatDuration(song.duration)
-      }))"
+      :items="formattedSongs"
       class="elevation-1"
       :items-per-page="5"
       :loading="loading"
@@ -29,8 +25,8 @@
           </td>
           <td>{{ item.artist }}</td>
           <td>{{ item.album || 'Unknown' }}</td>
-          <td>{{ item.formattedDuration }}</td>
-          <td>{{ item.play_count }}</td>
+          <td class="text-center">{{ item.formattedDuration }}</td>
+          <td class="text-center">{{ item.formattedPlayTime }}</td>
         </tr>
       </template>
     </v-data-table>
@@ -38,15 +34,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import type { DataTableHeader } from 'vuetify'
 
 interface Song {
   title: string
   artist: string
   album: string | null
-  duration: number // seconds
-  play_count: number
+  duration: number // in seconds
+  total_play_time: number // in seconds
   image_url: string
 }
 
@@ -58,29 +54,31 @@ const headers: DataTableHeader[] = [
   { title: 'Title', value: 'title' },
   { title: 'Artist', value: 'artist' },
   { title: 'Album', value: 'album' },
-  { title: 'Duration', value: 'formattedDuration' },
-  { title: 'Play Count', value: 'play_count' }
+  { title: 'Duration', value: 'formattedDuration', align: 'center' },
+  { title: 'Total Listening Time', value: 'formattedPlayTime', align: 'center' }
 ]
 
-function formatDuration(seconds: number) {
+function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60)
   const secs = seconds % 60
   return `${mins}:${secs.toString().padStart(2, '0')}`
 }
+
+const formattedSongs = computed(() =>
+  songs.value.map((song, index) => ({
+    ...song,
+    index: index + 1,
+    formattedDuration: formatTime(song.duration),
+    formattedPlayTime: formatTime(song.total_play_time)
+  }))
+)
 
 async function fetchSongs() {
   try {
     const response = await fetch('https://spotitried.onrender.com/analytics/most-played-songs')
     const data = await response.json()
 
-    songs.value = data.map((item: any) => ({
-      title: item.title,
-      artist: item.artist,
-      album: item.album,
-      duration: item.duration,
-      play_count: item.total_play_time,
-      image_url: item.image_url
-    }))
+    songs.value = data
   } catch (error) {
     console.error('Failed to fetch songs:', error)
   } finally {
@@ -88,14 +86,12 @@ async function fetchSongs() {
   }
 }
 
-onMounted(() => {
-  fetchSongs()
-})
+onMounted(fetchSongs)
 </script>
 
 <style scoped>
 .rounded-square {
-  border-radius: 8px; /* Slightly rounded corners like Spotify */
+  border-radius: 8px;
 }
 
 ::v-deep(th:first-child) {
