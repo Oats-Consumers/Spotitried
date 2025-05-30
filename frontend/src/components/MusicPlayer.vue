@@ -59,15 +59,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useMusicPlayerStore } from '@/stores/musicPlayer'
+import { useAuthStore } from '@/stores/auth'
 
 const player = useMusicPlayerStore()
+const auth = useAuthStore()
+
 const audio = ref<HTMLAudioElement | null>(null)
 
 const currentTime = ref(0)
 const duration = ref(0)
+
 let timer: ReturnType<typeof setInterval> | null = null
+let playbackStart: number | null = null
 
 function updateTime() {
   if (audio.value) {
@@ -93,10 +98,43 @@ function formatTime(seconds: number) {
   return `${min}:${sec.toString().padStart(2, '0')}`
 }
 
-// ─── Watch current song ───
+function startTimer() {
+  stopTimer()
+  updateTime()
+  timer = setInterval(updateTime, 500)
+  playbackStart = Date.now()
+}
+
+function stopTimer(report = true) {
+  if (timer) {
+    clearInterval(timer)
+    timer = null
+  }
+
+  if (report && playbackStart && player.currentSong && auth.id) {
+    const durationPlayed = Math.floor((Date.now() - playbackStart) / 1000)
+    if (durationPlayed >= 3) {
+      fetch('https://spotitried.onrender.com/basic/playback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          listener_id: auth.id,
+          song_id: player.currentSong.id,
+          duration_played: durationPlayed
+        })
+      }).catch(console.error)
+    }
+  }
+
+  playbackStart = null
+}
+
+// ─── Watch song changes ───
 watch(
   () => player.currentSong,
   async (song) => {
+    stopTimer()
+
     if (!song) return
     await nextTick()
     if (!audio.value) return
@@ -112,7 +150,7 @@ watch(
   { flush: 'post' }
 )
 
-// ─── Watch play/pause ───
+// ─── Watch play/pause state ───
 watch(
   () => player.playing,
   async (isPlaying) => {
@@ -134,9 +172,11 @@ function togglePlay() {
   player.playing = !player.playing
 }
 function playNext() {
+  stopTimer()
   player.playNext()
 }
 function playPrevious() {
+  stopTimer()
   player.playPrevious()
 }
 function onEnded() {
@@ -144,17 +184,10 @@ function onEnded() {
   player.playNext()
 }
 
-function startTimer() {
+// Clean up when tab is closed
+onBeforeUnmount(() => {
   stopTimer()
-  updateTime()
-  timer = setInterval(updateTime, 500)
-}
-function stopTimer() {
-  if (timer) {
-    clearInterval(timer)
-    timer = null
-  }
-}
+})
 </script>
 
 <style scoped>
