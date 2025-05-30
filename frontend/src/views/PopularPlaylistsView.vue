@@ -32,24 +32,32 @@
             <v-list-item
               v-for="(song, index) in selectedPlaylist?.songs || []"
               :key="index"
-              class="song-row"
+              :class="[songRowClass, 'song-row']"
               @mouseenter="hoveredIndex = index"
               @mouseleave="hoveredIndex = null"
             >
               <template #prepend>
-                <v-icon
-                  v-if="hoveredIndex === index"
-                  size="20"
-                  @click.stop="playSong(index)"
-                  class="fade-in mr-2"
-                >
-                  mdi-play
-                </v-icon>
-                <span 
-                  v-else 
-                  class="mr-2 text-center fade-out" 
-                  style="width: 20px;"
-                >{{ index + 1 }}</span>
+                <div class="relative-index mr-2">
+                  <v-icon
+                    v-if="currentSong?.id === song.id"
+                    class="playing-icon"
+                    size="20"
+                    color="green"
+                  >
+                    mdi-equalizer
+                  </v-icon>
+                  <v-icon
+                    v-else-if="hoveredIndex === index"
+                    size="20"
+                    @click.stop="playSong(index)"
+                    class="fade-in"
+                  >
+                    mdi-play
+                  </v-icon>
+                  <span v-else class="fade-out song-number">
+                    {{ index + 1 }}
+                  </span>
+                </div>
 
                 <v-img 
                   :src="song.image_url" 
@@ -74,8 +82,10 @@
               />
             </v-list-item>
 
-            <v-list-item v-else-if="(selectedPlaylist?.songs || []).length === 0" 
-              title="No songs available." />
+            <v-list-item
+              v-else-if="(selectedPlaylist?.songs || []).length === 0"
+              title="No songs available."
+            />
           </v-list>
         </v-card-text>
         <v-card-actions class="py-0">
@@ -88,9 +98,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useMusicPlayerStore } from '@/stores/musicPlayer'
 import type { DataTableHeader } from 'vuetify'
+import { useTheme } from 'vuetify'
 
 interface Song {
   id: number
@@ -125,6 +136,14 @@ const dialog = ref(false)
 const songsLoading = ref(false)
 
 const hoveredIndex = ref<number | null>(null)
+
+const player = useMusicPlayerStore()
+const currentSong = computed(() => player.currentSong)
+
+const theme = useTheme()
+const songRowClass = computed(() =>
+  theme.global.name.value === 'dark' ? 'song-row-dark' : 'song-row-light'
+)
 
 function formatDuration(seconds: number) {
   const mins = Math.floor(seconds / 60)
@@ -162,7 +181,6 @@ async function openPlaylist(playlist: Playlist) {
 
 function playSong(index: number) {
   if (!selectedPlaylist.value) return
-  const player = useMusicPlayerStore()
   player.loadPlaylist(selectedPlaylist.value.songs!, index)
 }
 
@@ -197,23 +215,15 @@ onMounted(() => {
 
 .song-row {
   transition: background-color 0.2s;
-}
-
-.song-row:hover {
-  background-color: #f5f5f5;
   cursor: pointer;
 }
 
-::v-deep(th:first-child) {
-  padding-right: 0 !important;
-  text-align: center;
-  width: 40px;
+.song-row-light:hover {
+  background-color: #f5f5f5;
 }
 
-td:first-child {
-  padding-right: 0 !important;
-  text-align: center;
-  width: 40px;
+.song-row-dark:hover {
+  background-color: #2a2a2a;
 }
 
 .fade-in {
@@ -229,4 +239,27 @@ td:first-child {
 .song-row:hover .fade-out {
   opacity: 0;
 }
+
+.relative-index {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  display: flex; /* <-- changed from inline-block */
+  align-items: center;
+  justify-content: center;
+}
+
+.song-number,
+.playing-icon,
+.play-icon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 </style>

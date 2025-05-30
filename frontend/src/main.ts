@@ -12,7 +12,7 @@ import '@mdi/font/css/materialdesignicons.css'  // Optional but recommended
 // ✅ Create Vuetify instance with custom dark theme
 const vuetify = createVuetify({
   theme: {
-    defaultTheme: 'dark',
+    defaultTheme: 'light',
     themes: {
       dark: {
         colors: {

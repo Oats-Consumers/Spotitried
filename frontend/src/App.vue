@@ -24,6 +24,9 @@
 
     <v-navigation-drawer v-model="drawer" app permanent>
       <v-list-item :to="{ name: 'home' }" title="Home" link />
+      <template v-if="auth.loggedIn">
+        <v-list-item :to="{ name: 'my-playlists' }" title="Playlists" link />
+      </template>
       <v-list-item :to="{ name: 'most-played' }" title="Most Played Songs" link />
       <v-list-item :to="{ name: 'user-playtime' }" title="User Playtime" link />
       <v-list-item :to="{ name: 'popular-playlists' }" title="Popular Playlists" link />
@@ -49,7 +52,7 @@ const auth = useAuthStore()
 
 const drawer = ref(true)
 
-const isDark = ref(true)
+const isDark = ref(false)
 
 const theme = useTheme()
 
