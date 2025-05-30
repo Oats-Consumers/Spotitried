@@ -16,7 +16,7 @@ export const useMusicPlayerStore = defineStore('musicPlayer', {
     playing: false
   }),
   getters: {
-    currentSong(state) {
+    currentSong(state): Song | null {
       return state.playlist[state.currentIndex] || null
     }
   },
