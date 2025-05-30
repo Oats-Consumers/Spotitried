@@ -6,6 +6,7 @@
     </div>
 
     <v-autocomplete
+      ref="autocompleteRef"
       v-if="isOwner"
       v-model="selectedSearchSong"
       :items="searchResults"
@@ -24,23 +25,23 @@
       hide-details
     >
       <template #item="{ props, item }">
-        <v-list-item v-bind="props">
+        <v-list-item v-bind="props" class="px-2 py-1">
           <template #prepend>
             <v-img
               :src="item.raw.image_url"
               alt="Cover"
-              height="32"
-              width="32"
-              class="mr-2"
+              height="40"
+              width="40"
+              class="rounded-square mr-3"
               cover
             />
           </template>
-          <v-list-item-title>
-            {{ item.raw.title }} - {{ item.raw.artist }}
-          </v-list-item-title>
-          <v-list-item-subtitle>
-            Album: {{ item.raw.album || 'Unknown' }}
-          </v-list-item-subtitle>
+
+          <v-list-item-content>
+            <v-list-item-subtitle class="text-caption">
+              Artist: {{ item.raw.artist }} · Album: {{ item.raw.album || 'Unknown' }}
+            </v-list-item-subtitle>
+          </v-list-item-content>
         </v-list-item>
       </template>
     </v-autocomplete>
@@ -109,7 +110,7 @@
 
       <v-list-item
         v-else-if="songs.length === 0"
-        class="text-center mt-10"
+        class="text-center my-10"
         title="No songs in this playlist."
       />
     </v-list>
@@ -204,6 +205,7 @@ const searchResults = ref<Song[]>([])
 const selectedSearchSong = ref<Song | null>(null)
 const searching = ref(false)
 const adding = ref(false)
+const autocompleteRef = ref()
 
 async function performSearch(query: string) {
   searchQuery.value = query
@@ -215,8 +217,11 @@ async function performSearch(query: string) {
   try {
     searching.value = true
     const res = await fetch(`https://spotitried.onrender.com/basic/search?query=${encodeURIComponent(query)}`)
-    const data = await res.json()
-    searchResults.value = data
+    const data: Song[] = await res.json()
+
+    // Filter out songs already in the playlist
+    const existingIds = new Set(songs.value.map(s => s.id))
+    searchResults.value = data.filter(song => !existingIds.has(song.id))
   } catch (err) {
     console.error('Search failed:', err)
   } finally {
@@ -238,7 +243,10 @@ async function addSongToPlaylist(song: Song | null) {
     }
 
     songs.value.push(song)
+
     selectedSearchSong.value = null
+    autocompleteRef.value?.blur()
+    setTimeout(() => autocompleteRef.value?.focus(), 0)
   } catch (error) {
     console.error('Failed to add song to playlist:', error)
   } finally {
