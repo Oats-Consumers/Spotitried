@@ -21,7 +21,6 @@ def get_most_played_songs(db: Session):
         .filter(Playback.played_at >= days_30_ago)
         .group_by(Song.id)
         .order_by(func.sum(Playback.duration_played).desc())
-        .limit(10)
         .all()
     )
 
@@ -50,7 +49,6 @@ def get_top_playlists(db: Session):
         .join(Follow, Playlist.id == Follow.playlist_id)
         .group_by(Playlist.id, Listener.username)
         .order_by(func.count(Follow.listener_id).desc())
-        .limit(10)
         .all()
     )
 
