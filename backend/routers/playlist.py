@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from backend.database import get_db
-from backend.schemas.user import PlaylistCreate, PlaylistResponse, SongResponse
+from backend.schemas.user import PlaylistCreate, PlaylistResponse, SongResponse, PlaylistResponseWithoutFollower
 from backend.crud import playlist as func_playlist
 
 router = APIRouter()
@@ -27,7 +27,7 @@ def get_playlist_by_id(playlist_id: int, db: Session = Depends(get_db)):
     }
     return result
 
-@router.post("/create", response_model=PlaylistResponse)
+@router.post("/create", response_model=PlaylistResponseWithoutFollower)
 def create_playlist(playlist: PlaylistCreate, db: Session = Depends(get_db)):
     return func_playlist.create_playlist(db, playlist)
 
