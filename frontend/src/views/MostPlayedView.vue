@@ -12,9 +12,31 @@
       loading-text="Loading songs..."
       hover
     >
-      <template v-slot:item="{ item }">
-        <tr>
-          <td class="text-center" style="width: 40px;">{{ item.index }}</td>
+      <template v-slot:item="{ item, index }">
+        <tr @mouseenter="hovered = index" @mouseleave="hovered = null">
+          <td class="text-center">
+            <div class="relative-index mr-2">
+              <v-icon
+                v-if="currentSong?.id === item.id"
+                class="playing-icon"
+                size="20"
+                color="#0ec444"
+              >
+                mdi-equalizer
+              </v-icon>
+              <v-icon
+                v-else-if="hovered === index"
+                class="play-icon"
+                size="20"
+                @click.stop="playSong(index)"
+              >
+                mdi-play
+              </v-icon>
+              <span v-else class="song-number">
+                {{ item.index }}
+              </span>
+            </div>
+          </td>
           <td>
             <div class="d-flex align-center">
               <v-avatar size="40" class="rounded-square mr-2">
@@ -35,19 +57,26 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useMusicPlayerStore } from '@/stores/musicPlayer'
 import type { DataTableHeader } from 'vuetify'
 
 interface Song {
+  id: number
   title: string
   artist: string
   album: string | null
   duration: number // in seconds
   total_play_time: number // in seconds
+  url: string
   image_url: string
 }
 
 const songs = ref<Song[]>([])
 const loading = ref(true)
+const hovered = ref<number | null>(null)
+
+const player = useMusicPlayerStore()
+const currentSong = computed(() => player.currentSong)
 
 const headers: DataTableHeader[] = [
   { title: '#', value: 'index', align: 'center' },
@@ -73,11 +102,14 @@ const formattedSongs = computed(() =>
   }))
 )
 
+function playSong(index: number) {
+  player.loadPlaylist(formattedSongs.value, index)
+}
+
 async function fetchSongs() {
   try {
     const response = await fetch('https://spotitried.onrender.com/analytics/most-played-songs')
     const data = await response.json()
-
     songs.value = data
   } catch (error) {
     console.error('Failed to fetch songs:', error)
@@ -94,12 +126,26 @@ onMounted(fetchSongs)
   border-radius: 8px;
 }
 
-::v-deep(th:first-child) {
-  padding-right: 0 !important;
-  text-align: center;
-  width: 40px;
+.relative-index {
+  position: relative;
+  width: 20px;
+  height: 20px;
 }
 
+.play-icon,
+.song-number,
+.playing-icon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+::v-deep(th:first-child),
 td:first-child {
   padding-right: 0 !important;
   text-align: center;
