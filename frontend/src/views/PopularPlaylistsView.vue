@@ -20,7 +20,7 @@
           <td class="d-flex align-center justify-space-between">
             <span>{{ item.followers }}</span>
             <v-icon
-              v-if="auth.username !== item.creator"
+              v-if="auth.loggedIn && auth.username !== item.creator"
               :icon="isFollowing(item.id) ? 'mdi-heart' : 'mdi-heart-outline'"
               :color="isFollowing(item.id) ? 'red' : ''"
               class="ml-2"
@@ -229,7 +229,6 @@ async function toggleFollow(playlist: Playlist) {
   }
 }
 
-
 async function openPlaylist(playlist: Playlist) {
   selectedPlaylist.value = playlist
   dialog.value = true
@@ -264,7 +263,10 @@ function playSong(index: number) {
 }
 
 onMounted(async () => {
-  await Promise.all([fetchPlaylists(), fetchFollowedPlaylists()])
+  await fetchPlaylists()
+  if (auth.loggedIn && auth.id) {
+    await fetchFollowedPlaylists()
+  }
   loading.value = false
 })
 </script>

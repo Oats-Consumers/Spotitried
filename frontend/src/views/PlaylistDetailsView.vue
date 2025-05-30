@@ -1,14 +1,15 @@
 <template>
   <v-container class="my-5">
-    <v-row class="align-center justify-space-between mb-4">
+    <v-row v-if="!loading" class="align-center justify-space-between mb-4">
       <v-col>
         <h1>{{ playlist?.name }}</h1>
-        <div v-if="!loading" class="text-subtitle-1">
+        <div class="text-subtitle-1">
           Created by {{ playlist?.creator }} · {{ playlist?.followers }} followers
         </div>
       </v-col>
-      <v-col v-if="isOwner" cols="auto">
+      <v-col cols="auto">
         <v-btn
+          v-if="isOwner"
           color="red"
           variant="flat"
           prepend-icon="mdi-delete"
@@ -16,9 +17,19 @@
         >
           Delete Playlist
         </v-btn>
+        <v-btn
+          v-else
+          color="red"
+          variant="flat"
+          prepend-icon="mdi-heart-broken"
+          @click="unfollowDialog = true"
+        >
+          Unfollow Playlist
+        </v-btn>
       </v-col>
     </v-row>
-    
+
+    <!-- Delete Playlist Dialog -->
     <v-dialog v-model="showDeleteDialog" max-width="400">
       <v-card>
         <v-card-title class="text-h6">Confirm Deletion</v-card-title>
@@ -28,12 +39,7 @@
         <v-card-actions>
           <v-spacer />
           <v-btn text @click="showDeleteDialog = false">Cancel</v-btn>
-          <v-btn
-            color="red"
-            text
-            @click="confirmDeletePlaylist"
-            :disabled="confirmingDelete"
-          >
+          <v-btn color="red" text @click="confirmDeletePlaylist" :disabled="confirmingDelete">
             <v-progress-circular
               v-if="confirmingDelete"
               indeterminate
@@ -47,6 +53,31 @@
       </v-card>
     </v-dialog>
 
+    <!-- Unfollow Playlist Dialog -->
+    <v-dialog v-model="unfollowDialog" max-width="400">
+      <v-card>
+        <v-card-title class="text-h6">Unfollow Playlist</v-card-title>
+        <v-card-text>
+          Are you sure you want to unfollow this playlist?
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn text @click="unfollowDialog = false">Cancel</v-btn>
+          <v-btn color="red" text @click="confirmUnfollow" :disabled="confirmingUnfollow">
+            <v-progress-circular
+              v-if="confirmingUnfollow"
+              indeterminate
+              size="20"
+              class="mr-2"
+              color="red"
+            />
+            <span v-else>Unfollow</span>
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Song Add & List -->
     <v-autocomplete
       ref="autocompleteRef"
       v-if="isOwner"
@@ -144,7 +175,7 @@
         </template>
       </v-list-item>
 
-      <v-list-item v-if="loading" class="d-flex justify-center">
+      <v-list-item v-if="loading" class="mt-16 d-flex justify-center">
         <v-progress-circular indeterminate />
       </v-list-item>
 
@@ -183,12 +214,19 @@ interface Playlist {
 
 const route = useRoute()
 const router = useRouter()
+const auth = useAuthStore()
+
 const playlist = ref<Playlist | null>(null)
 const songs = ref<Song[]>([])
 const loading = ref(true)
 const hovered = ref<number | null>(null)
 
-const auth = useAuthStore()
+const showDeleteDialog = ref(false)
+const confirmingDelete = ref(false)
+
+const unfollowDialog = ref(false)
+const confirmingUnfollow = ref(false)
+
 const playerStore = useMusicPlayerStore()
 const currentSong = computed(() => playerStore.currentSong)
 const isOwner = computed(() => playlist.value?.creator === auth.username)
@@ -211,7 +249,6 @@ async function fetchPlaylistDetails() {
       fetch(`https://spotitried.onrender.com/playlist/by_id/${id}`),
       fetch(`https://spotitried.onrender.com/playlist/get/${id}/songs`)
     ])
-
     const info = await infoRes.json()
     playlist.value = {
       id: info.id,
@@ -237,18 +274,31 @@ function playSong(index: number) {
   playerStore.loadPlaylist(songs.value, index)
 }
 
-onMounted(() => {
-  fetchPlaylistDetails()
-})
+onMounted(fetchPlaylistDetails)
 
+async function confirmUnfollow() {
+  if (!auth.loggedIn || !auth.id || !playlist.value) return
+  confirmingUnfollow.value = true
+  try {
+    const res = await fetch(`https://spotitried.onrender.com/user/unfollow/${auth.id}/${playlist.value.id}`, {
+      method: 'DELETE'
+    })
+    if (!res.ok) throw new Error(await res.text())
+    router.push('/my-playlists')
+  } catch (err) {
+    console.error('Failed to unfollow playlist:', err)
+  } finally {
+    confirmingUnfollow.value = false
+  }
+}
+
+// Autocomplete Search
 const searchQuery = ref('')
 const searchResults = ref<Song[]>([])
 const selectedSearchSong = ref<Song | null>(null)
 const searching = ref(false)
 const adding = ref(false)
 const autocompleteRef = ref()
-const showDeleteDialog = ref(false)
-const confirmingDelete = ref(false)
 
 async function performSearch(query: string) {
   searchQuery.value = query
@@ -278,10 +328,7 @@ async function addSongToPlaylist(song: Song | null) {
       method: 'POST'
     })
 
-    if (!res.ok) {
-      const errMsg = await res.text()
-      throw new Error(errMsg)
-    }
+    if (!res.ok) throw new Error(await res.text())
 
     songs.value.push(song)
     selectedSearchSong.value = null
@@ -301,10 +348,7 @@ async function removeSongFromPlaylist(songId: number) {
       method: 'DELETE'
     })
 
-    if (!res.ok) {
-      const errMsg = await res.text()
-      throw new Error(errMsg)
-    }
+    if (!res.ok) throw new Error(await res.text())
 
     songs.value = songs.value.filter(s => s.id !== songId)
   } catch (err) {
@@ -324,11 +368,7 @@ async function confirmDeletePlaylist() {
       method: 'DELETE'
     })
 
-    if (!res.ok) {
-      const errMsg = await res.text()
-      throw new Error(errMsg)
-    }
-
+    if (!res.ok) throw new Error(await res.text())
     router.push('/my-playlists')
   } catch (err) {
     console.error('Failed to delete playlist:', err)
@@ -336,7 +376,6 @@ async function confirmDeletePlaylist() {
     confirmingDelete.value = false
   }
 }
-
 </script>
 
 <style scoped>
