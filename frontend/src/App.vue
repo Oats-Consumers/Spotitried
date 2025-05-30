@@ -42,22 +42,29 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useTheme } from 'vuetify'
 import SpotitriedLogo from '@/assets/cropped_spotitried_logo.png'
-import MusicPlayer from './components/MusicPlayer.vue';
+import MusicPlayer from './components/MusicPlayer.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
-
 const drawer = ref(true)
 
 const isDark = ref(false)
-
 const theme = useTheme()
+
+onMounted(() => {
+  const stored = localStorage.getItem('isDark')
+  if (stored !== null) {
+    isDark.value = stored === 'true'
+    theme.global.name.value = isDark.value ? 'dark' : 'light'
+  }
+})
 
 watch(isDark, (val) => {
   theme.global.name.value = val ? 'dark' : 'light'
+  localStorage.setItem('isDark', String(val))
 })
 </script>
 
