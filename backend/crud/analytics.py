@@ -5,7 +5,7 @@ from backend.models.models import Song, Playback, Playlist, Follow, Listener
 
 
 def get_most_played_songs(db: Session):
-    one_week_ago = datetime.utcnow() - timedelta(days=40)
+    days_30_ago = datetime.utcnow() - timedelta(days=30)
     return (
         db.query(
             Song.id,
@@ -18,7 +18,7 @@ def get_most_played_songs(db: Session):
             Song.image_url
         )
         .join(Playback, Song.id == Playback.song_id)
-        .filter(Playback.played_at >= one_week_ago)
+        .filter(Playback.played_at >= days_30_ago)
         .group_by(Song.id)
         .order_by(func.sum(Playback.duration_played).desc())
         .limit(10)
