@@ -1,24 +1,25 @@
 <template>
   <v-app>
-    <v-app-bar app color="primary" dark>
+    <v-app-bar app color="surface" elevation="1" class="app-bar">
       <v-btn icon @click="drawer = !drawer" class="ml-2 mr-2">
-        <v-avatar size="48">
+        <v-avatar size="44">
           <v-img :src="SpotitriedLogo" alt="Spotitried Logo" cover />
         </v-avatar>
       </v-btn>
+      <v-app-bar-title class="brand-title">Spotitried</v-app-bar-title>
       <v-spacer />
-      
-      <!-- Auth buttons -->
-      <template v-if="!auth.loggedIn">
-        <v-btn variant="text" to="/login" router>Login</v-btn>
-        <v-btn variant="text" to="/register" router>Register</v-btn>
-      </template>
-      <template v-else>
-        <v-btn variant="text" @click="auth.logout">Logout</v-btn>
-      </template>
 
-      <!-- Dark mode toggle -->
-      <v-btn icon @click="isDark = !isDark">
+      <div class="auth-actions">
+        <template v-if="!auth.loggedIn">
+          <v-btn variant="text" to="/login" router>Login</v-btn>
+          <v-btn variant="text" to="/register" router>Register</v-btn>
+        </template>
+        <template v-else>
+          <v-btn variant="tonal" color="primary" @click="auth.logout">Logout</v-btn>
+        </template>
+      </div>
+
+      <v-btn icon @click="isDark = !isDark" class="ml-1">
         <v-icon>{{ isDark ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
       </v-btn>
     </v-app-bar>
@@ -27,15 +28,22 @@
       v-model="drawer"
       :temporary="display.smAndDown.value"
       app
+      class="nav-drawer"
     >
-      <v-list-item :to="{ name: 'home' }" title="Home" link />
-      <template v-if="auth.loggedIn">
-        <v-list-item :to="{ name: 'my-playlists' }" title="Playlists" link />
-      </template>
-      <v-list-item :to="{ name: 'most-played' }" title="Most Played Songs" link />
-      <v-list-item :to="{ name: 'user-playtime' }" title="User Playtime" link />
-      <v-list-item :to="{ name: 'popular-playlists' }" title="Popular Playlists" link />
-      <v-list-item :to="{ name: 'about' }" title="About" link />
+      <v-list nav density="comfortable">
+        <v-list-item :to="{ name: 'home' }" title="Home" prepend-icon="mdi-home-variant" link />
+        <template v-if="auth.loggedIn">
+          <v-list-item :to="{ name: 'my-playlists' }" title="Playlists" prepend-icon="mdi-playlist-music" link />
+        </template>
+
+        <v-list-subheader class="mt-2">Analytics</v-list-subheader>
+        <v-list-item :to="{ name: 'most-played' }" title="Most Played Songs" prepend-icon="mdi-fire" link />
+        <v-list-item :to="{ name: 'user-playtime' }" title="User Playtime" prepend-icon="mdi-clock-outline" link />
+        <v-list-item :to="{ name: 'popular-playlists' }" title="Popular Playlists" prepend-icon="mdi-music-box-multiple" link />
+
+        <v-list-subheader class="mt-2">Project</v-list-subheader>
+        <v-list-item :to="{ name: 'about' }" title="About" prepend-icon="mdi-information-outline" link />
+      </v-list>
     </v-navigation-drawer>
 
     <v-main>
@@ -81,4 +89,31 @@ watch(() => display.smAndDown.value, (isSmall) => {
 })
 </script>
 
-<style scoped></style>
+<style scoped>
+.app-bar {
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.brand-title {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.auth-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-drawer :deep(.v-list-item--active) {
+  background: rgba(var(--v-theme-primary), 0.18);
+  border-left: 3px solid rgb(var(--v-theme-primary));
+}
+
+.nav-drawer :deep(.v-list-subheader) {
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+</style>
